@@ -1,0 +1,442 @@
+// ═══ DE CUADROS V3 — PRISMA SCHEMA ═══
+// Full production database schema: 22 models
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─── AUTH ───
+model User {
+  id             String    @id @default(cuid())
+  email          String    @unique
+  phone          String?
+  name           String    @default("Crack")
+  avatar         String    @default("😎")
+  hashedPassword String?
+  image          String?
+  emailVerified  DateTime?
+
+  // Gamification
+  points       Int      @default(0)
+  totalXP      Int      @default(0)
+  tier         String   @default("NOVATO")
+  streak       Int      @default(0)
+  bestStreak   Int      @default(0)
+  lastActive   DateTime @default(now())
+  arcadePoints Int      @default(0)
+  gamesPlayed  Int      @default(0)
+
+  // Game high scores
+  dashBest    Int @default(0)
+  flappyBest  Int @default(0)
+  catchBest   Int @default(0)
+  triviaBest  Int @default(0)
+  memoryBest  Int @default(0)
+  bossBest    Int @default(0)
+
+  // Stats
+  totalSpent  Float   @default(0)
+  orderCount  Int     @default(0)
+  nightOrder  Boolean @default(false)
+  weekendOrder Boolean @default(false)
+
+  // Subscription
+  subscription   String  @default("free") // free | pro | king
+  isPremium      Boolean @default(false)
+  referralCode   String  @unique @default(cuid())
+  referredBy     String?
+  referralCount  Int     @default(0)
+
+  // Season
+  seasonXP     Int @default(0)
+  seasonLevel  Int @default(0)
+
+  // Relations
+  orders           Order[]
+  badges           UserBadge[]
+  missions         UserMission[]
+  seasonRewards    UserSeasonReward[]
+  pet              Pet?
+  posts            Post[]
+  reviews          Review[]
+  battlesAsChallenger Battle[] @relation("Challenger")
+  battlesAsOpponent   Battle[] @relation("Opponent")
+  notifications    Notification[]
+  coupons          UserCoupon[]
+  favorites        UserFavorite[]
+  purchases        InfproductPurchase[]
+  wheelSpins       WheelSpin[]
+  accounts         Account[]
+  sessions         Session[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+// ─── MENU ───
+model Category {
+  id        String     @id @default(cuid())
+  name      String     @unique
+  icon      String     @default("🍽️")
+  sortOrder Int        @default(0)
+  items     MenuItem[]
+
+  @@map("categories")
+}
+
+model MenuItem {
+  id          String  @id @default(cuid())
+  name        String
+  description String  @default("")
+  price       Float
+  image       String  @default("/placeholder.jpg")
+  badge       String? // "NUEVO", "🔥 TOP", etc.
+  active      Boolean @default(true)
+
+  // Nutrition
+  calories    Int?
+  allergens   String  @default("")
+  nutrition   String  @default("")
+
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  orderItems OrderItem[]
+  favorites  UserFavorite[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("menu_items")
+}
+
+// ─── ORDERS ───
+model Order {
+  id        String      @id @default(cuid())
+  code      String      @unique // DC-0001
+  userId    String
+  user      User        @relation(fields: [userId], references: [id])
+  status    String      @default("PENDING") // PENDING | CONFIRMED | PREPARING | READY | DELIVERING | DELIVERED | CANCELLED
+  total     Float
+  subtotal  Float
+  discount  Float       @default(0)
+  tip       Float       @default(0)
+  delivery  Boolean     @default(false)
+  notes     String?
+
+  // Payment
+  stripePaymentId String?
+  paymentStatus   String  @default("PENDING") // PENDING | PAID | FAILED | REFUNDED
+
+  items    OrderItem[]
+  review   Review?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("orders")
+}
+
+
+model OrderItem {
+  id         String   @id @default(cuid())
+  orderId    String
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItemId String
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
+  quantity   Int      @default(1)
+  price      Float
+  notes      String?
+
+  @@map("order_items")
+}
+
+// ─── GAMIFICATION ───
+model Badge {
+  id          String @id @default(cuid())
+  name        String @unique
+  icon        String
+  description String @default("")
+  rarity      String @default("common") // common | uncommon | rare | epic | legendary
+  category    String @default("general") // general | food | social | arcade | streak
+  condition   String @default("") // JSON condition for auto-unlock
+
+  users UserBadge[]
+
+  @@map("badges")
+}
+
+model UserBadge {
+  id       String   @id @default(cuid())
+  userId   String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badgeId  String
+  badge    Badge    @relation(fields: [badgeId], references: [id])
+  unlockedAt DateTime @default(now())
+
+  @@unique([userId, badgeId])
+  @@map("user_badges")
+}
+
+model Mission {
+  id          String @id @default(cuid())
+  text        String
+  icon        String @default("⬜")
+  reward      Int    @default(10) // XP reward
+  type        String @default("daily") // daily | weekly | special
+  condition   String @default("") // JSON condition
+
+  users UserMission[]
+
+  @@map("missions")
+}
+
+model UserMission {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  missionId   String
+  mission     Mission  @relation(fields: [missionId], references: [id])
+  progress    Int      @default(0)
+  completed   Boolean  @default(false)
+  completedAt DateTime?
+  resetDate   DateTime @default(now()) // For daily reset
+
+  @@unique([userId, missionId, resetDate])
+  @@map("user_missions")
+}
+
+model Season {
+  id        String   @id @default(cuid())
+  name      String
+  startDate DateTime
+  endDate   DateTime
+  active    Boolean  @default(false)
+
+  rewards SeasonReward[]
+
+  @@map("seasons")
+}
+
+model SeasonReward {
+  id          String @id @default(cuid())
+  seasonId    String
+  season      Season @relation(fields: [seasonId], references: [id])
+  level       Int
+  freeReward  String @default("")
+  premiumReward String @default("")
+
+  claims UserSeasonReward[]
+
+  @@unique([seasonId, level])
+  @@map("season_rewards")
+}
+
+model UserSeasonReward {
+  id             String       @id @default(cuid())
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  seasonRewardId String
+  seasonReward   SeasonReward @relation(fields: [seasonRewardId], references: [id])
+  claimedAt      DateTime     @default(now())
+
+  @@unique([userId, seasonRewardId])
+  @@map("user_season_rewards")
+}
+
+model WheelSpin {
+  id     String   @id @default(cuid())
+  userId String
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  prize  String
+  spunAt DateTime @default(now())
+
+  @@map("wheel_spins")
+}
+
+// ─── PETS ───
+model Pet {
+  id       String @id @default(cuid())
+  userId   String @unique
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name     String @default("Pulpi")
+  stage    Int    @default(0) // 0=Egg, 1=Baby...
+  mood     Int    @default(80)
+  actions  Int    @default(0)
+  lastFed  DateTime @default(now())
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("pets")
+}
+
+// ─── SOCIAL ───
+model Post {
+  id       String @id @default(cuid())
+  userId   String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  imageUrl String
+  caption  String @default("")
+  likes    Int    @default(0)
+  comments Int    @default(0)
+
+  createdAt DateTime @default(now())
+
+  @@map("posts")
+}
+
+model Review {
+  id      String @id @default(cuid())
+  userId  String
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orderId String @unique
+  order   Order  @relation(fields: [orderId], references: [id])
+  rating  Int    // 1-5
+  text    String @default("")
+  tags    String @default("") // comma-separated
+
+  createdAt DateTime @default(now())
+
+  @@map("reviews")
+}
+
+model Battle {
+  id           String @id @default(cuid())
+  challengerId String
+  challenger   User   @relation("Challenger", fields: [challengerId], references: [id])
+  opponentId   String
+  opponent     User   @relation("Opponent", fields: [opponentId], references: [id])
+  game         String @default("arcade")
+  challengerScore Int @default(0)
+  opponentScore   Int @default(0)
+  winnerId     String?
+  status       String @default("active") // active | completed
+
+  createdAt DateTime @default(now())
+
+  @@map("battles")
+}
+
+// ─── COMMERCE ───
+model Coupon {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  discount    Int      // percentage
+  maxUses     Int      @default(1)
+  usedCount   Int      @default(0)
+  active      Boolean  @default(true)
+  expiresAt   DateTime
+
+  users UserCoupon[]
+
+  @@map("coupons")
+}
+
+model UserCoupon {
+  id       String   @id @default(cuid())
+  userId   String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  couponId String
+  coupon   Coupon   @relation(fields: [couponId], references: [id])
+  usedAt   DateTime?
+  active   Boolean  @default(true)
+
+  @@unique([userId, couponId])
+  @@map("user_coupons")
+}
+
+model UserFavorite {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  menuItemId String
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
+
+  @@unique([userId, menuItemId])
+  @@map("user_favorites")
+}
+
+model Infoproduct {
+  id          String  @id @default(cuid())
+  name        String
+  description String  @default("")
+  price       Float
+  tier        String  @default("free") // free | mini | full
+  imageUrl    String  @default("")
+  downloadUrl String  @default("")
+  bonusPoints Int     @default(0)
+  active      Boolean @default(true)
+
+  purchases InfproductPurchase[]
+
+  @@map("infoproducts")
+}
+
+model InfproductPurchase {
+  id            String      @id @default(cuid())
+  userId        String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  infoproductId String
+  infoproduct   Infoproduct @relation(fields: [infoproductId], references: [id])
+  amount        Float
+  stripePaymentId String?
+
+  createdAt DateTime @default(now())
+
+  @@map("infoproduct_purchases")
+}
+
+// ─── NOTIFICATIONS ───
+model Notification {
+  id      String  @id @default(cuid())
+  userId  String
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  icon    String  @default("🔔")
+  title   String
+  message String
+  read    Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@map("notifications")
+}
