@@ -2,54 +2,73 @@
 
 /* ═══════════════════════════════════════════
    DE CUADROS — Mediterranean Premium Design System
-   Cocina de lujo · Mármol · Oliva · Crema
+   Stitch-aligned · Terracotta · Gold · Olive
    ═══════════════════════════════════════════ */
 
 :root {
-  /* Fondos */
-  --bg: #FAF9F6;
-  --bg2: #F3F0EA;
+  /* Backgrounds */
+  --bg: #FDFBF7;
+  --bg2: #F5F0E8;
   --bg3: #EDE9E0;
-  --marble: #F6F4EF;
-  --cream: #F7F3EC;
 
-  /* Acentos */
-  --olive: #5B7A5E;
-  --olive-light: #7A9E7D;
-  --olive-dark: #3D5A40;
-  --gold: #C5A55A;
-  --gold-light: #D4BA7A;
-  --terracotta: #C4764E;
+  /* Primary Palette (Stitch-aligned) */
+  --primary: #C3703C;
+  --primary-light: #D4895A;
+  --primary-dark: #A65D30;
+  --gold: #D4AF37;
+  --gold-light: #E0C460;
+  --olive: #6B705C;
+  --olive-light: #8A9078;
+  --olive-dark: #555A4A;
+  --navy: #1D2D44;
+  --terracotta: #C3703C;
 
-  /* Texto */
-  --text: #2C2C2C;
-  --text-soft: #6B6B6B;
-  --text-muted: #9A9A9A;
+  /* Text */
+  --text: #171412;
+  --text-soft: #5B574F;
+  --text-muted: #827268;
 
-  /* Utilidades */
-  --glass: rgba(91, 122, 94, 0.08);
+  /* Utilities */
+  --glass: rgba(195, 112, 60, 0.06);
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04);
   --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.08);
-  --radius: 14px;
-  --radius-sm: 10px;
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.1);
+  --radius: 16px;
+  --radius-sm: 12px;
+  --radius-xs: 8px;
 }
 
 /* ── Typography ────────────────────────── */
 body {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   color: var(--text);
   background: var(--bg);
   -webkit-font-smoothing: antialiased;
+}
+
+.font-display {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-weight: 800;
 }
 
 .font-serif {
   font-family: 'Playfair Display', serif;
 }
 
-.font-accent {
-  font-family: 'Cormorant Garamond', serif;
-  font-style: italic;
+/* ── Material Icons Helper ─────────────── */
+.icon {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-smoothing: antialiased;
 }
 
 /* ── Scrollbar ─────────────────────────── */
@@ -62,8 +81,13 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--olive-light);
+  background: var(--primary-light);
   border-radius: 3px;
+}
+
+/* ── Azulejo Tile Pattern ──────────────── */
+.azulejo-pattern {
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0l30 30-30 30L0 30z' fill='%23c3703c' fill-opacity='0.03' fill-rule='evenodd'/%3E%3C/svg%3E");
 }
 
 /* ── Animations ────────────────────────── */
@@ -125,15 +149,15 @@ body {
   }
 }
 
-@keyframes pulse-olive {
+@keyframes pulse-glow {
 
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgba(91, 122, 94, 0.25);
+    box-shadow: 0 0 0 0 rgba(195, 112, 60, 0.25);
   }
 
   50% {
-    box-shadow: 0 0 0 10px rgba(91, 122, 94, 0);
+    box-shadow: 0 0 0 10px rgba(195, 112, 60, 0);
   }
 }
 
@@ -165,6 +189,16 @@ body {
   }
 }
 
+@keyframes spin-wheel {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .animate-fade-in {
   animation: fadeIn 0.4s ease-out both;
 }
@@ -181,12 +215,12 @@ body {
   animation: float 3s ease-in-out infinite;
 }
 
-.animate-pulse-olive {
-  animation: pulse-olive 2s ease-in-out infinite;
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
 }
 
 .animate-shimmer {
-  background: linear-gradient(90deg, transparent 0%, rgba(197, 165, 90, 0.08) 50%, transparent 100%);
+  background: linear-gradient(90deg, transparent 0%, rgba(212, 175, 55, 0.08) 50%, transparent 100%);
   background-size: 200% 100%;
   animation: shimmer 2s linear infinite;
 }
@@ -231,9 +265,10 @@ body {
 /* ── Cards ─────────────────────────────── */
 .card {
   background: white;
-  border: 1px solid rgba(91, 122, 94, 0.1);
+  border: 1px solid rgba(195, 112, 60, 0.05);
   border-radius: var(--radius);
   padding: 20px;
+  box-shadow: var(--shadow-sm);
   transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
 
@@ -242,33 +277,19 @@ body {
   box-shadow: var(--shadow-md);
 }
 
-.card-marble {
-  background: linear-gradient(135deg, #FFFFFF 0%, #F6F4EF 30%, #EEEBE4 60%, #F8F6F1 100%);
-  border: 1px solid rgba(91, 122, 94, 0.08);
+.card-accent {
+  background: linear-gradient(135deg, var(--primary), var(--gold));
   border-radius: var(--radius);
-  padding: 20px;
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  padding: 24px;
+  color: white;
   position: relative;
   overflow: hidden;
-}
-
-.card-marble::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 30 Q15 28 30 30 Q45 32 60 30' fill='none' stroke='%23ddd8cf' stroke-width='0.5' opacity='0.3'/%3E%3C/svg%3E");
-  opacity: 0.4;
-  pointer-events: none;
-}
-
-.card-marble:hover {
-  transform: translateY(-3px);
-  box-shadow: var(--shadow-md);
+  box-shadow: 0 8px 32px rgba(195, 112, 60, 0.25);
 }
 
 .glass-card {
   background: rgba(255, 255, 255, 0.7);
-  border: 1px solid rgba(91, 122, 94, 0.1);
+  border: 1px solid rgba(195, 112, 60, 0.08);
   border-radius: var(--radius);
   backdrop-filter: blur(12px);
   padding: 20px;
@@ -281,23 +302,40 @@ body {
 }
 
 /* ── Buttons ───────────────────────────── */
+.btn-primary {
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 14px 28px;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.btn-primary:hover {
+  background: var(--primary-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(195, 112, 60, 0.3);
+}
+
 .btn-olive {
   background: var(--olive);
   color: white;
   border: none;
   border-radius: var(--radius-sm);
-  padding: 12px 28px;
-  font-weight: 600;
+  padding: 14px 28px;
+  font-weight: 700;
   font-size: 14px;
   cursor: pointer;
   transition: all 0.25s ease;
-  letter-spacing: 0.3px;
 }
 
 .btn-olive:hover {
   background: var(--olive-dark);
   transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(91, 122, 94, 0.3);
+  box-shadow: 0 4px 16px rgba(107, 112, 92, 0.3);
 }
 
 .btn-gold {
@@ -305,8 +343,8 @@ body {
   color: white;
   border: none;
   border-radius: var(--radius-sm);
-  padding: 12px 28px;
-  font-weight: 600;
+  padding: 14px 28px;
+  font-weight: 700;
   font-size: 14px;
   cursor: pointer;
   transition: all 0.25s ease;
@@ -314,59 +352,41 @@ body {
 
 .btn-gold:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(197, 165, 90, 0.35);
+  box-shadow: 0 4px 16px rgba(212, 175, 55, 0.35);
 }
 
-.btn-premium {
-  background: linear-gradient(135deg, var(--olive), var(--olive-dark));
+.btn-navy {
+  background: var(--navy);
   color: white;
   border: none;
   border-radius: var(--radius-sm);
-  padding: 14px 32px;
-  font-weight: 600;
-  font-size: 15px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.btn-premium:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 24px rgba(91, 122, 94, 0.3);
-}
-
-.btn-outline {
-  background: transparent;
-  color: var(--olive);
-  border: 2px solid var(--olive);
-  border-radius: var(--radius-sm);
-  padding: 12px 28px;
-  font-weight: 600;
+  padding: 14px 28px;
+  font-weight: 700;
   font-size: 14px;
   cursor: pointer;
   transition: all 0.25s ease;
 }
 
-.btn-outline:hover {
-  background: var(--olive);
-  color: white;
+.btn-navy:hover {
+  background: #162336;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(29, 45, 68, 0.3);
 }
 
 /* ── Progress Bar ──────────────────────── */
 .progress-bar {
-  height: 6px;
-  background: var(--bg3);
-  border-radius: 3px;
+  height: 10px;
+  background: rgba(195, 112, 60, 0.1);
+  border-radius: 5px;
   overflow: hidden;
 }
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--olive), var(--olive-light));
-  border-radius: 3px;
+  background: linear-gradient(90deg, var(--primary), var(--gold));
+  border-radius: 5px;
   transition: width 0.6s ease-out;
+  box-shadow: 0 0 8px rgba(212, 175, 55, 0.4);
 }
 
 /* ── Tier Badge ────────────────────────── */
@@ -380,8 +400,8 @@ body {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.8px;
-  background: var(--bg3);
-  color: var(--text-soft);
+  background: linear-gradient(135deg, var(--gold), var(--gold-light));
+  color: white;
 }
 
 /* ── Nav ────────────────────────────────── */
@@ -392,15 +412,17 @@ body {
   gap: 2px;
   padding: 8px 12px;
   color: var(--text-muted);
-  font-size: 11px;
-  font-weight: 500;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
   transition: color 0.2s;
   cursor: pointer;
 }
 
 .nav-link:hover,
 .nav-link.active {
-  color: var(--olive);
+  color: var(--primary);
 }
 
 /* ── Input ──────────────────────────────── */
@@ -417,12 +439,8 @@ body {
 }
 
 .input-premium:focus {
-  border-color: var(--olive);
-  box-shadow: 0 0 0 3px rgba(91, 122, 94, 0.1);
-}
-
-.input-premium::placeholder {
-  color: var(--text-muted);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(195, 112, 60, 0.1);
 }
 
 /* ── Badge Rarity ──────────────────────── */
@@ -444,7 +462,7 @@ body {
 
 .rarity-legendary {
   border-color: var(--gold);
-  box-shadow: 0 0 12px rgba(197, 165, 90, 0.25);
+  box-shadow: 0 0 12px rgba(212, 175, 55, 0.25);
 }
 
 /* ── Divider ────────────────────────────── */
@@ -452,31 +470,6 @@ body {
   height: 1px;
   background: linear-gradient(90deg, transparent, var(--bg3), transparent);
   margin: 24px 0;
-}
-
-/* ── Marble Background Pattern ─────────── */
-.bg-marble-pattern {
-  background-image:
-    linear-gradient(135deg, rgba(91, 122, 94, 0.02) 25%, transparent 25%),
-    linear-gradient(225deg, rgba(197, 165, 90, 0.02) 25%, transparent 25%),
-    linear-gradient(315deg, rgba(91, 122, 94, 0.02) 25%, transparent 25%),
-    linear-gradient(45deg, rgba(197, 165, 90, 0.02) 25%, transparent 25%);
-  background-size: 40px 40px;
-}
-
-/* ── Game Canvas Container ─────────────── */
-.game-container {
-  background: white;
-  border-radius: var(--radius);
-  border: 1px solid rgba(91, 122, 94, 0.1);
-  overflow: hidden;
-  box-shadow: var(--shadow-sm);
-}
-
-.game-container canvas {
-  display: block;
-  width: 100%;
-  border-radius: var(--radius);
 }
 
 /* ── Tooltip ────────────────────────────── */
