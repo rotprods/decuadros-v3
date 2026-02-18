@@ -10,6 +10,7 @@ const adminLinks = [
     { name: "Clientes", href: "/admin/users", icon: "group" },
     { name: "Reportes", href: "/admin/reports/cost", icon: "monitoring" },
     { name: "Configuración", href: "/admin/settings/printers", icon: "settings" },
+    { name: "Master Control", href: "/admin/settings/advanced", icon: "tune" },
 ]
 
 export function AdminSidebar() {

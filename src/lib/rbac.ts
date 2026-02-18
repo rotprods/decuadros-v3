@@ -38,7 +38,8 @@ const PERMISSIONS = {
         VIEW: ['OWNER', 'MANAGER', 'ACCOUNTANT'],
     },
     SETTINGS: {
-        MANAGE: ['OWNER'],
+        UPDATE: ['OWNER'],
+        VIEW: ['OWNER'],
     }
 }
 
