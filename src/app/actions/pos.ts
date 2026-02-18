@@ -3,6 +3,7 @@ import { db } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
 import { generateOrderCode } from "@/lib/utils"
+import { deductStockForOrder } from "./inventory"
 
 import { enforcePermission } from "@/lib/rbac"
 

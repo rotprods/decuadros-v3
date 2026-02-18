@@ -5,6 +5,7 @@ import { auth } from '@/lib/auth'
 import { awardXP, updateStreak, checkAndAwardBadges } from '@/lib/gamification'
 import { z } from 'zod'
 import { generateOrderCode } from '@/lib/utils'
+import { deductStockForOrder } from '@/app/actions/inventory'
 
 const orderSchema = z.object({
     items: z.array(z.object({

@@ -2,6 +2,7 @@
 
 import { db } from "@/lib/db"
 import { revalidatePath } from "next/cache"
+import { deductStockForOrder } from "./inventory"
 
 // Public action for Kiosk (no auth required, but maybe rate limited or validated by table existence)
 export async function createKioskOrder(data: {
@@ -60,6 +61,13 @@ export async function createKioskOrder(data: {
                 }
             }
         })
+
+        // Best effort stock deduction (assuming single location for now or taking first)
+        const location = await db.location.findFirst({ where: { active: true } })
+        if (location) {
+            // deductStockForOrder expects { menuItemId, quantity } which matches data.items structure
+            await deductStockForOrder(location.id, data.items)
+        }
 
         revalidatePath("/admin/kds")
         revalidatePath("/admin/orders")

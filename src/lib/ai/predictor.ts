@@ -68,14 +68,11 @@ export const SalesPredictor = {
         // 2. Estimate ingredient usage (this is hard without full recipe breakdown for every historical order)
         // MVP: Just alert on low stock items defined by minStock
 
-        const lowStockItems = await db.inventoryItem.findMany({
-            where: {
-                quantity: {
-                    lte: db.inventoryItem.fields.minStock
-                },
-                active: true
-            }
+        const allItems = await db.inventoryItem.findMany({
+            where: { active: true }
         })
+
+        const lowStockItems = allItems.filter(item => item.quantity <= item.minStock)
 
         return lowStockItems.map(item => ({
             type: "LOW_STOCK",
