@@ -22,6 +22,7 @@ model User {
   hashedPassword String?
   image          String?
   emailVerified  DateTime?
+  role           String    @default("USER")
 
   // Gamification
   points       Int      @default(0)
@@ -75,6 +76,14 @@ model User {
   wheelSpins       WheelSpin[]
   accounts         Account[]
   sessions         Session[]
+
+  // Operations
+  locationId String?
+  location   Location? @relation(fields: [locationId], references: [id])
+  
+  openedSessions CashSession[] @relation("OpenedBy")
+  closedSessions CashSession[] @relation("ClosedBy")
+  auditLogs      AuditLog[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -166,6 +175,11 @@ model Order {
   // Payment
   stripePaymentId String?
   paymentStatus   String  @default("PENDING") // PENDING | PAID | FAILED | REFUNDED
+  paymentMethod   String?
+  scheduledFor    DateTime?
+
+  locationId String?
+  location   Location? @relation(fields: [locationId], references: [id])
 
   items    OrderItem[]
   review   Review?
@@ -439,4 +453,74 @@ model Notification {
   createdAt DateTime @default(now())
 
   @@map("notifications")
+}
+
+// ─── OPERATIONS (The Quarters Layer) ───
+
+model Location {
+  id        String   @id @default(cuid())
+  name      String
+  address   String
+  phone     String?
+  tables    Int      @default(0)
+  active    Boolean  @default(true)
+  
+  orders        Order[]
+  inventory     InventoryItem[]
+  cashSessions  CashSession[]
+  users         User[] 
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("locations")
+}
+
+model InventoryItem {
+  id         String   @id @default(cuid())
+  locationId String
+  location   Location @relation(fields: [locationId], references: [id])
+  name       String
+  quantity   Float    @default(0)
+  unit       String   @default("units") // kg, g, l, ml, units
+  minStock   Float    @default(0)
+  cost       Float    @default(0)
+  active     Boolean  @default(true)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("inventory_items")
+}
+
+model CashSession {
+  id           String    @id @default(cuid())
+  locationId   String
+  location     Location  @relation(fields: [locationId], references: [id])
+  openedBy     String
+  opener       User      @relation("OpenedBy", fields: [openedBy], references: [id])
+  closedBy     String?
+  closer       User?     @relation("ClosedBy", fields: [closedBy], references: [id])
+  startTime    DateTime  @default(now())
+  endTime      DateTime?
+  startAmount  Float
+  endAmount    Float?
+  discrepancy  Float?
+  notes        String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("cash_sessions")
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  action    String
+  details   String   // JSON string
+  createdAt DateTime @default(now())
+  
+  @@map("audit_logs")
 }

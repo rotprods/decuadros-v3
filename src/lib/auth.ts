@@ -1,23 +1,17 @@
 // ═══ DE CUADROS V3 — NEXTAUTH CONFIG ═══
 import NextAuth from 'next-auth'
+import { authConfig } from '@/auth.config'
 import CredentialsProvider from 'next-auth/providers/credentials'
-import GoogleProvider from 'next-auth/providers/google'
 import { PrismaAdapter } from '@auth/prisma-adapter'
 import { db } from './db'
 import bcrypt from 'bcryptjs'
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
+    ...authConfig,
     adapter: PrismaAdapter(db) as any,
     session: { strategy: 'jwt' },
-    pages: {
-        signIn: '/login',
-        newUser: '/onboarding',
-    },
     providers: [
-        GoogleProvider({
-            clientId: process.env.GOOGLE_CLIENT_ID || '',
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
-        }),
+        ...authConfig.providers,
         CredentialsProvider({
             name: 'credentials',
             credentials: {
@@ -50,6 +44,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         }),
     ],
     callbacks: {
+        ...authConfig.callbacks,
         async jwt({ token, user }) {
             if (user) {
                 token.id = user.id
@@ -70,11 +65,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                         isPremium: true,
                         subscription: true,
                         avatar: true,
+                        role: true,
                     },
                 })
 
                 if (dbUser) {
-                    ; (session.user as any).tier = dbUser.tier
+                    ; (session.user as any).role = dbUser.role
+                        ; (session.user as any).tier = dbUser.tier
                         ; (session.user as any).points = dbUser.points
                         ; (session.user as any).streak = dbUser.streak
                         ; (session.user as any).isPremium = dbUser.isPremium

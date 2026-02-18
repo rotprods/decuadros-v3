@@ -46,11 +46,39 @@ export async function POST(req: NextRequest) {
             },
         })
 
-        // Welcome bonus
-        await db.user.update({
-            where: { id: user.id },
-            data: { points: { increment: 50 }, totalXP: { increment: 50 } },
+        // Welcome bonus (Points + Coupon)
+        const bonusTx = await db.$transaction(async (tx) => {
+            // 1. Give points
+            await tx.user.update({
+                where: { id: user.id },
+                data: { points: { increment: 50 }, totalXP: { increment: 50 } },
+            })
+
+            // 2. Ensure Coupon Exists
+            let coupon = await tx.coupon.findUnique({ where: { code: 'SUPERAFICIONADO' } })
+            if (!coupon) {
+                coupon = await tx.coupon.create({
+                    data: {
+                        code: 'SUPERAFICIONADO',
+                        discount: 10,
+                        maxUses: 999999,
+                        expiresAt: new Date('2030-01-01'), // Long expiry
+                        active: true
+                    }
+                })
+            }
+
+            // 3. Assign Coupon
+            await tx.userCoupon.create({
+                data: {
+                    userId: user.id,
+                    couponId: coupon.id,
+                }
+            })
         })
+
+        // Simulate Email
+        console.log(`[EMAIL SERVICE] Sending WELCOME EMAIL to ${email}. Template: welcome_bonus_v1`)
 
         return NextResponse.json({ user }, { status: 201 })
     } catch (error) {

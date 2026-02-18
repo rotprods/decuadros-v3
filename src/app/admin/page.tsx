@@ -1,42 +1,68 @@
-// ═══ ADMIN — Mediterranean ═══
-import Link from 'next/link'
-import { db } from '@/lib/db'
-export const dynamic = 'force-dynamic'
+import { db } from "@/lib/db"
+import { StatsCard } from "@/components/admin/StatsCard"
 
-async function getData() {
-    const [users, items, missions, badges] = await Promise.all([
+export const dynamic = 'force-dynamic' // Ensure real-time data
+
+export default async function AdminDashboard() {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    // Fetch real data from DB
+    const [orderCount, userCount, revenue, activeOrders] = await Promise.all([
+        db.order.count({ where: { createdAt: { gte: today } } }),
         db.user.count(),
-        db.menuItem.count(),
-        db.mission.count(),
-        db.badge.count(),
+        db.order.aggregate({
+            _sum: { total: true },
+            where: { createdAt: { gte: today } }
+        }),
+        db.order.count({ where: { status: { notIn: ['DELIVERED', 'CANCELLED'] } } })
     ])
-    return { users, items, missions, badges }
-}
 
-export default async function AdminPage() {
-    const d = await getData()
+    const totalRevenue = revenue._sum.total || 0
+
     return (
-        <div className="min-h-screen" style={{ background: 'linear-gradient(180deg, #FAF9F6 0%, #F3F0EA 100%)' }}>
-            <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-[#EDE9E0]">
-                <div className="max-w-lg mx-auto px-5 py-3 flex items-center gap-3">
-                    <Link href="/app" className="text-[#9A9A9A] hover:text-[#5B7A5E]">←</Link>
-                    <h1 className="font-bold" style={{ fontFamily: "'Playfair Display', serif" }}>⚙️ Admin</h1>
-                </div>
+        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <header>
+                <h2 className="text-3xl font-bold tracking-tight text-white mb-1">Resumen del Despacho</h2>
+                <p className="text-slate-400">Bienvenido, Jefe. Aquí tienes el pulso de tu negocio.</p>
             </header>
-            <div className="max-w-lg mx-auto px-5 py-6">
-                <div className="grid grid-cols-2 gap-3 stagger">
-                    {[
-                        { label: 'Usuarios', value: d.users, icon: '👥' },
-                        { label: 'Platos', value: d.items, icon: '🍽️' },
-                        { label: 'Misiones', value: d.missions, icon: '🎯' },
-                        { label: 'Logros', value: d.badges, icon: '🏅' },
-                    ].map((s, i) => (
-                        <div key={i} className="card text-center animate-fade-in">
-                            <div className="text-2xl mb-1">{s.icon}</div>
-                            <div className="text-2xl font-bold text-[#5B7A5E]" style={{ fontFamily: "'Playfair Display', serif" }}>{s.value}</div>
-                            <div className="text-xs text-[#9A9A9A]">{s.label}</div>
-                        </div>
-                    ))}
+
+            {/* KPI Cards */}
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+                <StatsCard
+                    title="Ventas Hoy"
+                    value={`${totalRevenue.toFixed(2)}€`}
+                    icon="payments"
+                    trend="+12% vs ayer"
+                />
+                <StatsCard
+                    title="Pedidos Hoy"
+                    value={orderCount.toString()}
+                    icon="receipt_long"
+                    trend="+5% vs ayer"
+                />
+                <StatsCard
+                    title="Pedidos Activos"
+                    value={activeOrders.toString()}
+                    icon="cooking"
+                    trend="En cocina/reparto"
+                    trendUp={activeOrders > 0}
+                />
+                <StatsCard
+                    title="Usuarios Totales"
+                    value={userCount.toString()}
+                    icon="group"
+                    trend="+24 nuevo mes"
+                />
+            </div>
+
+            {/* We will add charts and recent orders table here next */}
+            <div className="grid gap-6 md:grid-cols-2">
+                <div className="bg-slate-900 rounded-2xl border border-white/5 p-6 h-96 flex items-center justify-center text-slate-500">
+                    Gráfico de Ventas (Próximamente)
+                </div>
+                <div className="bg-slate-900 rounded-2xl border border-white/5 p-6 h-96 flex items-center justify-center text-slate-500">
+                    Últimos Pedidos (Próximamente)
                 </div>
             </div>
         </div>
