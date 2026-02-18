@@ -4,6 +4,7 @@ import { db } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { awardXP, updateStreak, checkAndAwardBadges } from '@/lib/gamification'
 import { z } from 'zod'
+import { generateOrderCode } from '@/lib/utils'
 
 const orderSchema = z.object({
     items: z.array(z.object({
@@ -15,6 +16,7 @@ const orderSchema = z.object({
     notes: z.string().optional(),
     tip: z.number().min(0).default(0),
     couponCode: z.string().optional(),
+    locationId: z.string().optional(),
 })
 
 // GET /api/orders — Order history
@@ -88,10 +90,8 @@ export async function POST(req: NextRequest) {
 
         const total = subtotal - discount + tip
 
-        // Generate order code
-        const user = await db.user.findUnique({ where: { id: session.user.id } })
-        const orderCount = (user?.orderCount || 0) + 1
-        const code = 'DC-' + String(orderCount + 1000).padStart(4, '0')
+        // Generate robust order code
+        const code = generateOrderCode()
 
         // Create order
         const order = await db.order.create({
@@ -108,6 +108,19 @@ export async function POST(req: NextRequest) {
             },
             include: { items: { include: { menuItem: true } } },
         })
+
+        // Deduct Inventory
+        const deductionItems = items.map(item => ({
+            menuItemId: item.menuItemId,
+            quantity: item.quantity
+        }))
+
+        // Use locationId from the request body if provided, otherwise skip deduction
+        if (locationId) {
+            await deductStockForOrder(locationId, deductionItems)
+        } else {
+            console.warn('No locationId provided for order, skipping stock deduction.')
+        }
 
         // Update user stats
         const xpEarned = Math.round(total * 10)

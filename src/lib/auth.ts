@@ -45,39 +45,51 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     ],
     callbacks: {
         ...authConfig.callbacks,
-        async jwt({ token, user }) {
+        async jwt({ token, user, trigger, session }) {
             if (user) {
                 token.id = user.id
+                token.role = (user as any).role
+            }
+
+            // On sign in or update, fetch visible user data
+            if (user || trigger === "update") {
+                const userId = (token.id as string) || (user?.id as string)
+                if (userId) {
+                    const dbUser = await db.user.findUnique({
+                        where: { id: userId },
+                        select: {
+                            tier: true,
+                            points: true,
+                            streak: true,
+                            isPremium: true,
+                            subscription: true,
+                            avatar: true,
+                            role: true,
+                        }
+                    })
+                    if (dbUser) {
+                        token.role = dbUser.role
+                        token.tier = dbUser.tier
+                        token.points = dbUser.points
+                        token.streak = dbUser.streak
+                        token.isPremium = dbUser.isPremium
+                        token.subscription = dbUser.subscription
+                        token.avatar = dbUser.avatar
+                    }
+                }
             }
             return token
         },
         async session({ session, token }) {
             if (session.user && token.id) {
                 session.user.id = token.id as string
-
-                // Fetch fresh user data
-                const dbUser = await db.user.findUnique({
-                    where: { id: token.id as string },
-                    select: {
-                        tier: true,
-                        points: true,
-                        streak: true,
-                        isPremium: true,
-                        subscription: true,
-                        avatar: true,
-                        role: true,
-                    },
-                })
-
-                if (dbUser) {
-                    ; (session.user as any).role = dbUser.role
-                        ; (session.user as any).tier = dbUser.tier
-                        ; (session.user as any).points = dbUser.points
-                        ; (session.user as any).streak = dbUser.streak
-                        ; (session.user as any).isPremium = dbUser.isPremium
-                        ; (session.user as any).subscription = dbUser.subscription
-                        ; (session.user as any).avatar = dbUser.avatar
-                }
+                    ; (session.user as any).role = token.role
+                    ; (session.user as any).tier = token.tier
+                    ; (session.user as any).points = token.points
+                    ; (session.user as any).streak = token.streak
+                    ; (session.user as any).isPremium = token.isPremium
+                    ; (session.user as any).subscription = token.subscription
+                    ; (session.user as any).avatar = token.avatar
             }
             return session
         },

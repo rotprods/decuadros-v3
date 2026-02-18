@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation"
 const adminLinks = [
     { name: "Resumen", href: "/admin", icon: "dashboard" },
     { name: "Pedidos", href: "/admin/orders", icon: "list_alt" },
+    { name: "Pantalla Cocina", href: "/admin/kds", icon: "soup_kitchen" },
     { name: "Carta", href: "/admin/menu", icon: "restaurant_menu" },
     { name: "Clientes", href: "/admin/users", icon: "group" },
 ]
@@ -30,8 +31,8 @@ export function AdminSidebar() {
                             key={link.href}
                             href={link.href}
                             className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${isActive
-                                    ? "bg-amber-500 text-black font-bold shadow-lg shadow-amber-500/20"
-                                    : "hover:bg-white/5 text-slate-300 hover:text-white"
+                                ? "bg-amber-500 text-black font-bold shadow-lg shadow-amber-500/20"
+                                : "hover:bg-white/5 text-slate-300 hover:text-white"
                                 }`}
                         >
                             <span className="material-symbols-outlined">{link.icon}</span>

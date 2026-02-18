@@ -28,9 +28,13 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ items, categories })
 }
 
+import { enforcePermission } from '@/lib/rbac'
+
 // POST /api/menu — Create item (admin only)
 export async function POST(req: NextRequest) {
     try {
+        await enforcePermission('MENU', 'EDIT')
+
         const body = await req.json()
         const item = await db.menuItem.create({
             data: {

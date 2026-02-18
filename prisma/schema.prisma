@@ -152,10 +152,22 @@ model MenuItem {
   orderItems OrderItem[]
   favorites  UserFavorite[]
 
+  ingredients Ingredient[]
+  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@map("menu_items")
+}
+
+model Ingredient {
+  id         String   @id @default(cuid())
+  menuItemId String
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  name       String   // Matches InventoryItem.name
+  quantity   Float
+  
+  @@map("ingredients")
 }
 
 // ─── ORDERS ───

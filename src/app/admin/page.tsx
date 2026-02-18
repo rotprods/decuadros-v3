@@ -1,5 +1,7 @@
 import { db } from "@/lib/db"
 import { StatsCard } from "@/components/admin/StatsCard"
+import { SalesChart } from "@/components/admin/SalesChart"
+import { RecentOrders } from "@/components/admin/RecentOrders"
 
 export const dynamic = 'force-dynamic' // Ensure real-time data
 
@@ -56,15 +58,102 @@ export default async function AdminDashboard() {
                 />
             </div>
 
-            {/* We will add charts and recent orders table here next */}
-            <div className="grid gap-6 md:grid-cols-2">
-                <div className="bg-slate-900 rounded-2xl border border-white/5 p-6 h-96 flex items-center justify-center text-slate-500">
-                    Gráfico de Ventas (Próximamente)
+    // Aggregation Logic for Charts
+            // 1. Get orders from last 7 days
+            const sevenDaysAgo = new Date()
+            sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+
+            const recentOrdersWeek = await db.order.findMany({
+                where: {
+                createdAt: {gte: sevenDaysAgo },
+            status: {not: 'CANCELLED' } // Only count valid sales
+        },
+            select: {createdAt: true, total: true }
+    })
+
+    // 2. Group by day
+    const salesByDay = recentOrdersWeek.reduce((acc, order) => {
+        const date = order.createdAt.toLocaleDateString('es-ES', {weekday: 'short' }) // e.g., "lun", "mar"
+            // Capitalize
+            const day = date.charAt(0).toUpperCase() + date.slice(1)
+            acc[day] = (acc[day] || 0) + order.total
+            return acc
+    }, { } as Record<string, number>)
+
+            // 3. Format for Recharts
+            // Ensure chronological order for last 7 days
+            const chartData = []
+    for (let i = 6; i >= 0; i--) {
+        const d = new Date()
+            d.setDate(d.getDate() - i)
+            const dayName = d.toLocaleDateString('es-ES', {weekday: 'short' })
+            const label = dayName.charAt(0).toUpperCase() + dayName.slice(1)
+            chartData.push({
+                date: label,
+            sales: salesByDay[label] || 0
+        })
+    }
+
+            // 4. Fetch recent orders for table
+            const recentOrdersList = await db.order.findMany({
+                take: 5,
+            orderBy: {createdAt: 'desc' },
+            include: {
+                user: {select: {name: true, avatar: true } },
+            items: true // counting items in JS
+        }
+    })
+
+    const formattedRecentOrders = recentOrdersList.map(o => ({
+                id: o.id,
+            code: o.code,
+            user: o.user,
+            total: o.total,
+            status: o.status,
+            createdAt: o.createdAt,
+        itemsCount: o.items.reduce((s, i) => s + i.quantity, 0)
+    }))
+
+            return (
+            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <header>
+                    <h2 className="text-3xl font-bold tracking-tight text-white mb-1">Resumen del Despacho</h2>
+                    <p className="text-slate-400">Bienvenido, Jefe. Aquí tienes el pulso de tu negocio.</p>
+                </header>
+
+                {/* KPI Cards */}
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+                    <StatsCard
+                        title="Ventas Hoy"
+                        value={`${totalRevenue.toFixed(2)}€`}
+                        icon="payments"
+                        trend="+12% vs ayer" // TODO: Calculate real trend
+                    />
+                    <StatsCard
+                        title="Pedidos Hoy"
+                        value={orderCount.toString()}
+                        icon="receipt_long"
+                        trend="+5% vs ayer" // TODO: Calculate real trend
+                    />
+                    <StatsCard
+                        title="Pedidos Activos"
+                        value={activeOrders.toString()}
+                        icon="cooking"
+                        trend="En cocina/reparto"
+                        trendUp={activeOrders > 0}
+                    />
+                    <StatsCard
+                        title="Usuarios Totales"
+                        value={userCount.toString()}
+                        icon="group"
+                        trend="+24 nuevo mes" // TODO: Calculate real trend
+                    />
                 </div>
-                <div className="bg-slate-900 rounded-2xl border border-white/5 p-6 h-96 flex items-center justify-center text-slate-500">
-                    Últimos Pedidos (Próximamente)
+
+                <div className="grid gap-6 md:grid-cols-2">
+                    <SalesChart data={chartData} />
+                    <RecentOrders orders={formattedRecentOrders} />
                 </div>
             </div>
-        </div>
-    )
+            )
 }

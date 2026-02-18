@@ -2,18 +2,17 @@ import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { AdminSidebar } from "@/components/admin/AdminSidebar"
 
+import { getCurrentRole, ROLES } from "@/lib/rbac"
+
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-    const session = await auth()
+    const role = await getCurrentRole()
 
-    // Strict Role Check
-    // Allow 'ADMIN' role OR specific email for dev/safety
-    const role = (session?.user as any)?.role
-    const email = session?.user?.email
-    const isAdmin = role === 'ADMIN' || email === 'roiertoortega@gmail.com' || email === 'admin@decuadros.com'
+    // Allow access to any staff role
+    const allowedRoles = [ROLES.OWNER, ROLES.MANAGER, ROLES.CASHIER, ROLES.KITCHEN, ROLES.STAFF, ROLES.ACCOUNTANT]
+    const hasAccess = allowedRoles.includes(role)
 
-    // If not authenticated or not admin, redirect to App
-    if (!session || !isAdmin) {
-        // In a real app, maybe redirect to 404 to hide admin existence, but redirect to /app is fine for now
+    // If not authorized, redirect to App
+    if (!hasAccess) {
         redirect("/app")
     }
 
