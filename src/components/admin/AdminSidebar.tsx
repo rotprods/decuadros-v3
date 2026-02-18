@@ -8,6 +8,8 @@ const adminLinks = [
     { name: "Pantalla Cocina", href: "/admin/kds", icon: "soup_kitchen" },
     { name: "Carta", href: "/admin/menu", icon: "restaurant_menu" },
     { name: "Clientes", href: "/admin/users", icon: "group" },
+    { name: "Reportes", href: "/admin/reports/cost", icon: "monitoring" },
+    { name: "Configuración", href: "/admin/settings/printers", icon: "settings" },
 ]
 
 export function AdminSidebar() {

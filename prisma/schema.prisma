@@ -146,6 +146,8 @@ model MenuItem {
   allergens   String  @default("")
   nutrition   String  @default("")
 
+  station     String  @default("KITCHEN") // KITCHEN, BAR, PIZZA
+
   categoryId String
   category   Category @relation(fields: [categoryId], references: [id])
 

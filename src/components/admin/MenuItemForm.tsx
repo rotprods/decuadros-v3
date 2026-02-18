@@ -15,6 +15,7 @@ export function MenuItemForm({ categories, initialData, onClose }: MenuItemFormP
         description: initialData?.description || "",
         price: initialData?.price || 0,
         categoryId: initialData?.categoryId || categories[0]?.id || "",
+        station: initialData?.station || "KITCHEN",
         image: initialData?.image || "",
         ingredients: initialData?.ingredients || [] // Array of { name, quantity }
     })
@@ -38,6 +39,11 @@ export function MenuItemForm({ categories, initialData, onClose }: MenuItemFormP
         setFormData(prev => ({ ...prev, ingredients: prev.ingredients.filter((_, i) => i !== index) }))
     }
 
+    // Calculate theoretical cost based on ingredients and assumed average cost or manual input
+    // For now, we will add a costPerUnit input to ingredients in this form
+    const theoreticalCost = formData.ingredients.reduce((acc, ing: any) => acc + (ing.quantity * (ing.costPerUnit || 0)), 0)
+    const margin = formData.price > 0 ? ((formData.price - theoreticalCost) / formData.price) * 100 : 0
+
     const handleSubmit = async (e: any) => {
         e.preventDefault()
         setLoading(true)
@@ -47,9 +53,13 @@ export function MenuItemForm({ categories, initialData, onClose }: MenuItemFormP
                 price: parseFloat(formData.price.toString()),
                 ingredients: formData.ingredients.map((ing: any) => ({
                     name: ing.name,
-                    quantity: parseFloat(ing.quantity.toString())
+                    quantity: parseFloat(ing.quantity.toString()),
+                    // We don't save costPerUnit to Ingredient model yet unless we migrate schema.
+                    // But we can save it to InventoryItem if we matched it.
+                    // For this iteration, let's just show the calculation.
                 }))
             }
+            // ... rest of submit
 
             if (initialData) {
                 await updateMenuItemFull(initialData.id, dataToSubmit)
@@ -108,18 +118,34 @@ export function MenuItemForm({ categories, initialData, onClose }: MenuItemFormP
                         />
                     </div>
 
-                    <div>
-                        <label className="block text-sm font-medium text-slate-400 mb-1">Categoría</label>
-                        <select
-                            name="categoryId"
-                            value={formData.categoryId}
-                            onChange={handleChange}
-                            className="w-full bg-slate-950 border border-white/10 rounded-lg p-2 text-white"
-                        >
-                            {categories.map(c => (
-                                <option key={c.id} value={c.id}>{c.name}</option>
-                            ))}
-                        </select>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-slate-400 mb-1">Categoría</label>
+                            <select
+                                name="categoryId"
+                                value={formData.categoryId}
+                                onChange={handleChange}
+                                className="w-full bg-slate-950 border border-white/10 rounded-lg p-2 text-white"
+                            >
+                                {categories.map(c => (
+                                    <option key={c.id} value={c.id}>{c.name}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-400 mb-1">Puesto (KDS)</label>
+                            <select
+                                name="station"
+                                value={formData.station}
+                                onChange={handleChange}
+                                className="w-full bg-slate-950 border border-white/10 rounded-lg p-2 text-white"
+                            >
+                                <option value="KITCHEN">Cocina</option>
+                                <option value="BAR">Barra</option>
+                                <option value="PIZZA">Horno Pizza</option>
+                                <option value="DESSERT">Postres</option>
+                            </select>
+                        </div>
                     </div>
 
                     {/* Ingredients Section */}
@@ -132,26 +158,49 @@ export function MenuItemForm({ categories, initialData, onClose }: MenuItemFormP
                         </div>
                         <div className="space-y-2">
                             {formData.ingredients.map((ing: any, i: number) => (
-                                <div key={i} className="flex gap-2">
+                                <div key={i} className="flex gap-2 items-center">
                                     <input
                                         placeholder="Nombre (ej. Pan Burger)"
                                         value={ing.name}
                                         onChange={(e) => handleIngredientChange(i, "name", e.target.value)}
                                         className="flex-1 bg-slate-950 border border-white/10 rounded-lg p-2 text-sm text-white"
                                     />
-                                    <input
-                                        type="number"
-                                        placeholder="Ud."
-                                        step="0.01"
-                                        value={ing.quantity}
-                                        onChange={(e) => handleIngredientChange(i, "quantity", e.target.value)}
-                                        className="w-20 bg-slate-950 border border-white/10 rounded-lg p-2 text-sm text-white"
-                                    />
-                                    <button type="button" onClick={() => removeIngredient(i)} className="text-red-400 hover:text-red-300">
+                                    <div className="flex flex-col w-20">
+                                        <input
+                                            type="number"
+                                            placeholder="Ud."
+                                            step="0.01"
+                                            value={ing.quantity}
+                                            onChange={(e) => handleIngredientChange(i, "quantity", e.target.value)}
+                                            className="w-full bg-slate-950 border border-white/10 rounded-lg p-2 text-sm text-white text-right"
+                                        />
+                                        <span className="text-[10px] text-slate-500 text-center">Cant.</span>
+                                    </div>
+                                    <div className="flex flex-col w-24">
+                                        <input
+                                            type="number"
+                                            placeholder="€/u"
+                                            step="0.01"
+                                            value={ing.costPerUnit || ""}
+                                            onChange={(e) => handleIngredientChange(i, "costPerUnit", parseFloat(e.target.value))}
+                                            className="w-full bg-slate-950 border border-white/10 rounded-lg p-2 text-sm text-white text-right"
+                                        />
+                                        <span className="text-[10px] text-slate-500 text-center">Coste Unit.</span>
+                                    </div>
+                                    <button type="button" onClick={() => removeIngredient(i)} className="text-red-400 hover:text-red-300 p-2">
                                         <span className="material-symbols-outlined">delete</span>
                                     </button>
                                 </div>
                             ))}
+                        </div>
+
+                        <div className="mt-4 p-4 bg-slate-800/50 rounded-xl flex justify-between items-center text-sm">
+                            <div className="text-slate-400">
+                                Coste Teórico: <span className="text-white font-bold">{theoreticalCost.toFixed(2)}€</span>
+                            </div>
+                            <div className={margin < 70 ? "text-red-400" : "text-green-400"}>
+                                Margen: <span className="font-bold">{margin.toFixed(1)}%</span>
+                            </div>
                         </div>
                     </div>
 
