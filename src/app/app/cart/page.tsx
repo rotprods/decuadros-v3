@@ -15,6 +15,27 @@ export default function CartPage() {
         setError(null)
 
         try {
+            // 1. Create Order in Database (PENDING)
+            const orderRes = await fetch("/api/orders", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    items: items.map(i => ({
+                        menuItemId: i.id,
+                        quantity: i.quantity,
+                        notes: "" // Add notes support later
+                    })),
+                    delivery: false, // Default to pickup for now, can add toggle
+                    tip: 0
+                }),
+            })
+
+            const orderData = await orderRes.json()
+            if (!orderRes.ok) throw new Error(orderData.error || "Error creando el pedido")
+
+            const orderId = orderData.order.id
+
+            // 2. Create Stripe Session with Order ID
             const stripeItems = items.map(item => ({
                 name: item.name,
                 price: item.price,
@@ -25,18 +46,19 @@ export default function CartPage() {
             const res = await fetch("/api/stripe/checkout", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ items: stripeItems }),
+                body: JSON.stringify({ items: stripeItems, orderId }), // Pass actual orderId
             })
 
             const data = await res.json()
 
             if (!res.ok || !data.url) {
-                throw new Error(data.error || "Error al crear el pago")
+                throw new Error(data.error || "Error al conectar con Stripe")
             }
 
-            // Redirect to Stripe hosted checkout
+            // 3. Redirect
             window.location.href = data.url
         } catch (err: any) {
+            console.error(err)
             setError(err.message || "Error inesperado")
             setIsCheckingOut(false)
         }
