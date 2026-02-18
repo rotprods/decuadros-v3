@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
 
     try {
         const body = await req.json()
-        const { items, delivery, notes, tip, couponCode } = orderSchema.parse(body)
+        const { items, delivery, notes, tip, couponCode, locationId } = orderSchema.parse(body)
 
         // Fetch menu items and calculate totals
         const menuItemIds = items.map(i => i.menuItemId)
